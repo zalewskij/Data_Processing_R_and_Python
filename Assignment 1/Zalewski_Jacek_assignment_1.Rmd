@@ -1,0 +1,303 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(warning = FALSE, message = FALSE, echo = TRUE) 
+```
+
+```{r, include=FALSE}
+source('Zalewski_Jacek_assignment_1.R')
+```
+
+<center>
+
+<h1>Homework assignment no. 1 - DPRPy 2022/2023</h1>
+
+</center>
+
+<center>
+
+<h3>Zalewski Jacek 313138</h3>
+
+</center>
+
+<center>
+
+<h3>
+
+17.11.2022
+
+</center>
+
+## Introduction
+
+Structure of the report:
+
+1.  Packages and loading data
+2.  Showing the equivalence of results of each query
+3.  Comparing benchmarks of all queries
+4.  Alternative solutions    In this project we were working on a simplified data from the website t <https://archive.org/details/stackexchange>. This data contains informations about Badges, Comments, Posts, Users and Votes from stackexchange forum.
+
+## Packages and loading data
+
+In this project additional packages were needed: dplyr, data.table, sqldf. Every package provide us with alternative way of manipulating data. Additionally dplyr contains method which allow us to compare equivalence of results. Micro-benchmark is used to measure efficiency of manipulating on data. Packages can be added with following commands:
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+if (!require('sqldf')) install.packages('sqldf')
+library(sqldf)
+
+if (!require('dplyr')) install.packages('dplyr')
+library(dplyr)
+
+if (!require('data.table')) install.packages('data.table')
+library(data.table)
+
+if (!require('microbenchmark')) install.packages('microbenchmark')
+library(microbenchmark)
+
+if (!require('stringi')) install.packages('stringi')
+library(stringi)
+
+
+
+```
+
+Next we load data into data frames. It can be done with use of the code below:
+
+```{r, results='hide', message=FALSE, warning=FALSE}
+options(stringsAsFactors=FALSE)
+
+Posts = read.csv('Posts.csv')
+Users = read.csv('Users.csv')
+Badges = read.csv('Badges.csv')
+Comments = read.csv('Comments.csv')
+Votes = read.csv('Votes.csv')
+```
+
+## Showing the equivalance of results of each query
+
+For each query results of function base_x, dplyr_x and data.table_x (where x = number_of_query) is compared to the output of reference solution given in the task. Furthermore for all queries an "intuitive" interpretation of the query functionality is given. To compare results dplyr:all_equal() function is used:
+
+### Query 1
+
+Description: Number of posts for each year
+
+```{r}
+
+#comparing base_1 to reference solution
+result_base_1 <- all_equal(sqldf_1(Posts), base_1(Posts), ignore_col_order = TRUE, convert=TRUE)
+result_base_1
+
+#comparing dplyr_1 to reference solution
+result_dplyr_1 <- all_equal(sqldf_1(Posts), dplyr_1(Posts), ignore_col_order = TRUE, convert=TRUE)
+result_dplyr_1
+
+#comparing data.table_1 to reference solution
+result_data.table_1 <- all_equal(sqldf_1(Posts), data.table_1(Posts), ignore_col_order = TRUE, convert=TRUE)
+result_data.table_1
+```
+
+  
+
+### Query 2
+
+Description: First we select from the users and Id and Display name. From posts, we obtain OwnerUserId ViewCount and PostTypeId We are interested only Posts which are questions (PostTypeId = 1). Merging posts with their owners and finding the top 10 users that are owner of posts with the highest view count.
+
+```{r}
+
+#comparing base_1 to reference solution
+result_base_2 <- all_equal(sqldf_2(Users, Posts), base_2(Users, Posts), ignore_col_order = TRUE, convert=TRUE)
+result_base_2
+
+# #comparing dplyr_1 to reference solution
+result_dplyr_2 <- all_equal(sqldf_2(Users, Posts), dplyr_2(Users, Posts), ignore_col_order = TRUE, convert=TRUE)
+result_dplyr_2
+# 
+# #comparing data.table_1 to reference solution
+result_data.table_2 <- all_equal(sqldf_2(Users, Posts), data.table_2(Users, Posts), ignore_col_order = TRUE, convert=TRUE)
+result_data.table_2
+```
+
+  
+
+### Query 3
+
+Description: We start with counting how many badges of every type were given each year. Moreover, we calculate the total number of badges given each year. In the next step, we checked the popularity of every Badge. In the final result, only the most popular badges of the year are selected.
+
+```{r}
+
+#comparing base_1 to reference solution
+result_base_3 <- all_equal(sqldf_3(Badges), base_3(Badges), ignore_col_order = TRUE, convert=TRUE)
+result_base_3
+
+#comparing dplyr_1 to reference solution
+result_dplyr_3 <- all_equal(sqldf_3(Badges), dplyr_3(Badges), ignore_col_order = TRUE, convert=TRUE)
+result_dplyr_3
+
+#comparing data.table_1 to reference solution
+result_data.table_3 <- all_equal(sqldf_3(Badges), data.table_3(Badges), ignore_col_order = TRUE, convert=TRUE)
+result_data.table_3
+```
+
+  
+
+### Query 4
+
+Description: Firstly we calculate the sum of every post - the score of comments (probable reaction added to comments) is a measure of the popularity of the post. We pick only posts that are questions. Next, we obtain information about the Owners of the post. Finally, we select 10 posts that are the most popular.
+
+```{r}
+
+#comparing base_1 to reference solution
+result_base_4 <- all_equal(sqldf_4(Comments, Posts, Users), base_4(Comments, Posts, Users), ignore_col_order = TRUE, convert=TRUE)
+result_base_4
+
+# #comparing dplyr_1 to reference solution
+result_dplyr_4 <- all_equal(sqldf_4(Comments, Posts, Users), dplyr_4(Comments, Posts, Users), ignore_col_order = TRUE, convert=TRUE)
+result_dplyr_4
+# 
+# #comparing data.table_1 to reference solution
+result_data.table_4 <- all_equal(sqldf_4(Comments, Posts, Users), data.table_4(Comments, Posts, Users), ignore_col_order = TRUE, convert=TRUE)
+result_data.table_4
+```
+
+  
+
+### Query 5
+
+Description: We select only votes of type 3 (down-vote), 4 (offensive) or 12 (spam) (note: all votes are negative reaction). Depending on the year, votes belong to one of 3 classes (Before covid, during covid, or after covid). Next we summarize Post information showing number of votes before, during and after and the total number of votes. (note: before covid period contains many years so we consider only the most active year of the post) Posts are sorted by DuringCovidVotes and the total number of votes. 20 posts that had the highest number of votes during covid without empty titles. (most negative reaction of post during covid)
+
+```{r}
+
+#comparing base_1 to reference solution
+result_base_5 <- all_equal(sqldf_5(Posts, Votes), base_5(Posts, Votes), ignore_col_order = TRUE, convert=TRUE)
+result_base_5
+
+#comparing dplyr_1 to reference solution
+result_dplyr_5 <- all_equal(sqldf_5(Posts, Votes), dplyr_5(Posts, Votes), ignore_col_order = TRUE, convert=TRUE)
+result_dplyr_5
+ 
+#comparing data.table_1 to reference solution
+result_data.table_5 <- all_equal(sqldf_5(Posts, Votes), data.table_5(Posts, Votes), ignore_col_order = TRUE, convert=TRUE)
+result_data.table_5
+```
+
+  
+
+## Comparing benchmarks of all queries
+
+Next, benchmarks of all queries will be run to measure the time of the execution with each method In order to measure performance of the function microbenchark package is being used. Moreover, each function is tested n = 5 times:
+
+## Results {.tabset}
+
+### Query 1
+
+```{r}
+microbenchmark(
+  sqldf=sqldf_1(Posts),
+  base=base_1(Posts),
+  dplyr=dplyr_1(Posts),
+  data.table=data.table_1(Posts),
+  times = 5,
+  unit = "s"
+)
+```
+
+### Query 2
+
+```{r}
+microbenchmark(
+  sqldf=sqldf_2(Users, Posts),
+  base=base_2(Users, Posts),
+  dplyr=dplyr_2(Users, Posts),
+  data.table=data.table_2(Users, Posts),
+  times = 5,
+  unit = "s"
+)
+```
+
+### Query 3
+
+```{r}
+microbenchmark(
+  sqldf=sqldf_3(Badges),
+  base=base_3(Badges),
+  dplyr=dplyr_3(Badges),
+  data.table=data.table_3(Badges), 
+  times = 5,
+  unit = "s"
+)
+```
+
+### Query 4
+
+```{r}
+microbenchmark(
+  sqldf=sqldf_4(Comments, Posts, Users),
+  base=base_4(Comments, Posts, Users),
+  dplyr=dplyr_4(Comments, Posts, Users),
+  data.table=data.table_4(Comments, Posts, Users), 
+  times = 5,
+  unit = "s"
+)
+```
+
+### Query 5
+
+```{r}
+microbenchmark(
+  sqldf=sqldf_5(Posts, Votes),
+  base=base_5(Posts, Votes),
+  dplyr=dplyr_5(Posts, Votes),
+  data.table=data.table_5(Posts, Votes), 
+  times = 5,
+  unit = "s"
+)
+```
+
+As we can see the fastest way is to use data.table package. In terms of the notation dplyr is a convinient solution with descent performance results. \## {-}
+
+## Alternative solutions
+
+To boost the performance of loading data we can used fread() function from data.table package. Results of fread() are going to be compared to performance of read.csv() function. Similarly microbenchmark package is used:
+
+```{r}
+microbenchmark(
+  fread=fread('Votes.csv'),
+  read_csv=read.csv('Votes.csv'),
+  times = 10,
+  unit = "s"
+)
+```
+
+Moreover in the task we need to operate on date. We can compare three ways of extracting year from date:
+
+```{r}
+date<-Votes$CreationDate
+f_1<-function(){
+  format(Year<-as.POSIXct(date),format = "%Y")
+}
+```
+
+```{r}
+date <-Votes$CreationDate
+f_2<-function(){
+  data.frame(format(as.Date(date),"%Y"))
+}
+```
+
+```{r}
+date<-Votes$CreationDate
+f_3<-function(){
+  Year<-stri_extract_all_regex(date[],"(20)+([0-9]{2})")
+  Year<-data.frame(unlist(Year))
+
+}
+```
+
+As we can see extracting year with Regex is the most efficient. Below results of this benchmark:
+
+```{r}
+microbenchmark::microbenchmark(f_1(),
+                               f_2(),
+                               f_3(),
+                               times = 5)
+```
+
+      
